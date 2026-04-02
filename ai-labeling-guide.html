@@ -1713,19 +1713,28 @@
   ctx.font      = <span class="str">`bold ${fontSize}px -apple-system, sans-serif`</span>;
   ctx.textAlign = <span class="str">'right'</span>;
 
-  <span class="comment">// 3. 반투명 배경 박스 (우하단)</span>
-  <span class="keyword">const</span> tw = ctx.measureText(text).width;
-  <span class="keyword">const</span> bx = canvas.width  - pad * <span class="val">2</span> - tw;
-  <span class="keyword">const</span> by = canvas.height - pad * <span class="val">2</span> - fontSize;
+  <span class="comment">// 3. 실제 텍스트 바운딩 박스 측정 → 균등 패딩으로 박스 역산</span>
+  <span class="keyword">const</span> metrics  = ctx.measureText(text);
+  <span class="keyword">const</span> tw        = metrics.width;
+  <span class="keyword">const</span> ascent    = metrics.actualBoundingBoxAscent;   <span class="comment">// baseline 위 실제 높이</span>
+  <span class="keyword">const</span> descent   = metrics.actualBoundingBoxDescent;  <span class="comment">// baseline 아래 실제 높이</span>
+  <span class="keyword">const</span> padH      = pad;           <span class="comment">// 좌우 패딩</span>
+  <span class="keyword">const</span> padV      = pad * <span class="val">0.55</span>;   <span class="comment">// 상하 균등 패딩</span>
+  <span class="comment">// 우하단 기준: 박스 우측/하단 끝을 pad만큼 안쪽으로</span>
+  <span class="keyword">const</span> textX = canvas.width  - pad - padH;
+  <span class="keyword">const</span> textY = canvas.height - pad - padV - descent;
+  <span class="keyword">const</span> boxL  = textX - tw - padH;
+  <span class="keyword">const</span> boxT  = textY - ascent - padV;
+  <span class="keyword">const</span> boxW  = tw + padH * <span class="val">2</span>;
+  <span class="keyword">const</span> boxH  = ascent + descent + padV * <span class="val">2</span>;
   ctx.fillStyle = <span class="str">'rgba(0,0,0,0.45)'</span>;
   ctx.beginPath();
-  ctx.roundRect(bx - pad, by - pad * <span class="val">0.5</span>,
-                tw + pad * <span class="val">2</span>, fontSize + pad * <span class="val">1.2</span>, <span class="val">4</span>);
+  ctx.roundRect(boxL, boxT, boxW, boxH, <span class="val">4</span>);
   ctx.fill();
 
   <span class="comment">// 4. 텍스트 렌더링</span>
   ctx.fillStyle = <span class="str">'rgba(255,255,255,0.9)'</span>;
-  ctx.fillText(text, canvas.width - pad, canvas.height - pad);
+  ctx.fillText(text, textX, textY);
 
   <span class="comment">// 5. Blob으로 변환 후 다운로드</span>
   canvas.toBlob(blob =&gt; {
